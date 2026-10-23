@@ -1,0 +1,2 @@
+# Anicare
+Every Life Deserves a Chance.  Anicare is a community-driven animal rescue platform designed to help abandoned and vulnerable animals find safety, care, and a new home. It connects citizens, volunteers, and animal welfare communities through geolocated sightings, shared information, and direct communication.
