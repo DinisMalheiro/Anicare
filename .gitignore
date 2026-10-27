@@ -1,0 +1,13 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.vscode/
+
+# fotografias enviadas pelos utilizadores
+data/uploads/*
+!data/uploads/.gitkeep
