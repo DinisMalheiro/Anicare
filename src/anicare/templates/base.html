@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Mapa{% endblock %} · AniCare</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block cabecalho %}{% endblock %}
+</head>
+<body>
+  <header class="topo"><a class="marca" href="{{ url_for('mapa.inicio') }}">AniCare</a></header>
+  <main>{% block conteudo %}{% endblock %}</main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,7 +1,9 @@
+"""Exceções próprias da aplicação."""
 
 
 class ErroDominio(ValueError):
-    pass
+    """Dados que violam as regras do modelo (ex.: latitude inválida)."""
+
 
 class ErroNegocio(Exception):
-    pass
+    """Pedido recusado. A mensagem é escrita para o utilizador."""
