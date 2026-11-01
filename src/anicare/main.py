@@ -1,3 +1,9 @@
+"""Ponto de entrada da aplicação.
+
+Desenvolvimento:   python -m anicare.main
+                   (ou)  flask --app anicare.main run --debug
+Produção:          gunicorn "anicare:create_app()"
+"""
 
 from anicare import config, create_app
 

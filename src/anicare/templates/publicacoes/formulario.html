@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block titulo %}Nova publicação{% endblock %}
+
+{% block cabecalho %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+{% endblock %}
+
+{% block conteudo %}
+  <section class="cartao">
+    <h1>Novo avistamento</h1>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <h2>1. Onde viste o animal?</h2>
+      <p>Clica no mapa para marcar o local exato.</p>
+      <button type="button" id="usar-localizacao" class="secundario">Usar a minha localização</button>
+      <div id="mapa-escolha" class="mapa mapa-pequeno"></div>
+      <p id="coordenadas" class="meta">Ainda sem local escolhido.</p>
+      <input type="hidden" name="latitude" id="latitude" value="{{ form.get('latitude', '') }}">
+      <input type="hidden" name="longitude" id="longitude" value="{{ form.get('longitude', '') }}">
+
+      <fieldset>
+        <legend>2. Sobre o animal</legend>
+        <label>Espécie
+          <select name="especie_id" id="especie_id" required>
+            <option value="">Escolhe...</option>
+            {% for e in especies %}
+              <option value="{{ e.id }}" {{ 'selected' if form.get('especie_id') == e.id|string }}>{{ e.nome }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Cor
+          <input type="text" name="cor" value="{{ form.get('cor', '') }}" required maxlength="50">
+        </label>
+        <label>Porte
+          <select name="porte" required>
+            {% for valor, nome in portes %}
+              <option value="{{ valor }}" {{ 'selected' if form.get('porte') == valor }}>{{ nome }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Sexo
+          <select name="sexo">
+            {% for valor, nome in sexos %}
+              <option value="{{ valor }}" {{ 'selected' if form.get('sexo') == valor }}>{{ nome }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Nome (se souberes)
+          <input type="text" name="nome" value="{{ form.get('nome', '') }}" maxlength="80">
+        </label>
+        <label>Idade aproximada
+          <input type="text" name="idade_aproximada" value="{{ form.get('idade_aproximada', '') }}" maxlength="50">
+        </label>
+        <label>Estado de saúde
+          <textarea name="estado_saude" rows="2">{{ form.get('estado_saude', '') }}</textarea>
+        </label>
+      </fieldset>
+
+      <h2>3. A publicação</h2>
+      <label>Título
+        <input type="text" name="titulo" value="{{ form.get('titulo', '') }}" required maxlength="150">
+      </label>
+      <label>Descrição
+        <textarea name="descricao" rows="4" maxlength="5000">{{ form.get('descricao', '') }}</textarea>
+      </label>
+      <label>Quando o viste?
+        <input type="datetime-local" name="data_avistamento"
+               value="{{ form.get('data_avistamento', agora) }}" max="{{ agora }}" required>
+      </label>
+
+      <button type="submit">Publicar</button>
+    </form>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/formulario.js') }}"></script>
+{% endblock %}

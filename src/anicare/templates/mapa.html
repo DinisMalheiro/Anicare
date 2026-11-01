@@ -6,29 +6,8 @@
 {% endblock %}
 
 {% block conteudo %}
-  <p class="meta">Clica no mapa para marcar um animal. <span id="contagem"></span></p>
+  <p id="contagem" class="contagem"></p>
   <div id="mapa" class="mapa" role="application" aria-label="Mapa de animais"></div>
-
-  <form id="novo-pin" class="cartao" hidden>
-    <h2>Novo pin</h2>
-    <p id="coordenadas" class="meta"></p>
-    <label>Título
-      <input type="text" name="titulo" required maxlength="150">
-    </label>
-    <label>Espécie
-      <select name="especie" required>
-        <option value="cão">Cão</option>
-        <option value="gato">Gato</option>
-        <option value="outro">Outro</option>
-      </select>
-    </label>
-    <label>Descrição (opcional)
-      <textarea name="descricao" rows="3" maxlength="2000"></textarea>
-    </label>
-    <p id="erro" class="aviso aviso-erro" hidden></p>
-    <button type="submit">Guardar pin</button>
-    <button type="button" id="cancelar" class="secundario">Cancelar</button>
-  </form>
 {% endblock %}
 
 {% block scripts %}

@@ -14,7 +14,12 @@ SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 @contextmanager
 def sessao():
-    """Abre uma sessão: commit no fim, rollback se houver erro."""
+    """Abre uma sessão: faz commit no fim e rollback se houver erro.
+
+    Uso:
+        with sessao() as s:
+            PublicacaoRepository(s).listar_pins()
+    """
     s = SessionLocal()
     try:
         yield s
@@ -27,13 +32,18 @@ def sessao():
 
 
 def verificar_ligacao() -> None:
-    """Falha logo no arranque, com uma mensagem clara, se a BD não estiver pronta."""
+    """Confirma no arranque que a BD responde e que o PostGIS está instalado.
+
+    Falha logo, com uma mensagem clara, em vez de dar erros estranhos mais tarde.
+    """
     try:
         with engine.connect() as ligacao:
-            ligacao.execute(text("SELECT 1 FROM pins LIMIT 1"))
+            ligacao.execute(text("SELECT PostGIS_Version()"))
+            ligacao.execute(text("SELECT 1 FROM publicacoes LIMIT 1"))
     except SQLAlchemyError as erro:
         raise RuntimeError(
             "Não foi possível usar a base de dados. Confirma que:\n"
-            " O PostgreSQL está a correr e o DATABASE_URL do .env está certo;\n"
+            "  1. o PostgreSQL está a correr e o DATABASE_URL do .env está certo;\n"
+            "  2. a extensão PostGIS está instalada;\n"
             f"Detalhe: {erro.__cause__ or erro}"
         ) from erro

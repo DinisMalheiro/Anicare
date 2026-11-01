@@ -1,4 +1,4 @@
-"""Testes das páginas (precisam do .env e da base de dados com o schema.sql). Só leem dados."""
+"""Testes das páginas principais (precisam do .env e da base de dados)."""
 
 import pytest
 
@@ -22,11 +22,11 @@ def test_pins_em_geojson(cliente):
     assert resposta.get_json()["type"] == "FeatureCollection"
 
 
-def test_pin_invalido_da_erro_400(cliente):
-    resposta = cliente.post("/api/pins", json={"titulo": "", "especie": "cão", "latitude": 1, "longitude": 1})
-    assert resposta.status_code == 400
-    assert "erro" in resposta.get_json()
+def test_publicacao_inexistente_da_404(cliente):
+    assert cliente.get("/publicacoes/999999999").status_code == 404
 
 
-def test_pedido_sem_json_da_erro_400(cliente):
-    assert cliente.post("/api/pins", data="isto nao e json").status_code == 400
+def test_nova_publicacao_exige_login(cliente):
+    resposta = cliente.get("/publicacoes/nova")
+    assert resposta.status_code == 302
+    assert "/auth/login" in resposta.headers["Location"]

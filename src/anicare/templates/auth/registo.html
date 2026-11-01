@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titulo %}Registar{% endblock %}
+{% block conteudo %}
+  <section class="cartao estreito">
+    <h1>Criar conta</h1>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Username
+        <input type="text" name="username" value="{{ form.get('username', '') }}"
+               required minlength="3" maxlength="30" autocomplete="username">
+      </label>
+      <label>Email
+        <input type="email" name="email" value="{{ form.get('email', '') }}"
+               required maxlength="254" autocomplete="email">
+      </label>
+      <label>Palavra-passe (mínimo 8 caracteres)
+        <input type="password" name="password" required minlength="8" maxlength="128"
+               autocomplete="new-password">
+      </label>
+      <label>Repete a palavra-passe
+        <input type="password" name="password2" required minlength="8" maxlength="128"
+               autocomplete="new-password">
+      </label>
+      <button type="submit">Registar</button>
+    </form>
+    <p>Já tens conta? <a href="{{ url_for('auth.login') }}">Entra</a>.</p>
+  </section>
+{% endblock %}

@@ -8,8 +8,33 @@
   {% block cabecalho %}{% endblock %}
 </head>
 <body>
-  <header class="topo"><a class="marca" href="{{ url_for('mapa.inicio') }}">AniCare</a></header>
-  <main>{% block conteudo %}{% endblock %}</main>
+  <header class="topo">
+    <a class="marca" href="{{ url_for('mapa.inicio') }}">AniCare</a>
+    <nav>
+      <a href="{{ url_for('mapa.inicio') }}">Mapa</a>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('publicacoes.nova') }}">Nova publicação</a>
+        <span class="utilizador">{{ current_user.username }}</span>
+        <form method="post" action="{{ url_for('auth.logout') }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="ligacao">Sair</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">Entrar</a>
+        <a href="{{ url_for('auth.registo') }}">Registar</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main>
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% for categoria, texto in mensagens %}
+        <p class="aviso aviso-{{ categoria }}" role="status">{{ texto }}</p>
+      {% endfor %}
+    {% endwith %}
+    {% block conteudo %}{% endblock %}
+  </main>
+
   {% block scripts %}{% endblock %}
 </body>
 </html>

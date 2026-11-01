@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}{{ p.titulo }}{% endblock %}
+
+{% block conteudo %}
+  <article class="cartao">
+    <h1>{{ p.titulo }}</h1>
+    <p class="meta">
+      Publicado por <strong>{{ p.autor }}</strong> · visto em {{ p.data_avistamento|data_pt }}
+    </p>
+
+    {% if p.descricao %}<p class="descricao">{{ p.descricao }}</p>{% endif %}
+
+    <dl class="ficha">
+      <dt>Espécie</dt><dd>{{ p.especie }}</dd>
+      {% if p.animal_nome %}<dt>Nome</dt><dd>{{ p.animal_nome }}</dd>{% endif %}
+      <dt>Cor</dt><dd>{{ p.cor }}</dd>
+      <dt>Porte</dt><dd>{{ p.porte }}</dd>
+      <dt>Sexo</dt><dd>{{ p.sexo }}</dd>
+      {% if p.idade_aproximada %}<dt>Idade</dt><dd>{{ p.idade_aproximada }}</dd>{% endif %}
+      {% if p.estado_saude %}<dt>Saúde</dt><dd>{{ p.estado_saude }}</dd>{% endif %}
+      <dt>Local</dt><dd>{{ '%.5f'|format(p.latitude) }}, {{ '%.5f'|format(p.longitude) }}</dd>
+    </dl>
+  </article>
+{% endblock %}
