@@ -7,8 +7,10 @@ from anicare.erros import ErroNegocio
 
 _SELECT = """
     SELECT u.id, u.username::text AS username, u.email::text AS email,
-           u.password_hash, u.criado_em
+           u.password_hash, r.nome AS role, u.ativo,
+           host(u.ultimo_ip) AS ultimo_ip, u.ultimo_login_em, u.criado_em
     FROM utilizadores u
+    JOIN roles r ON r.id = u.role_id
 """
 
 
@@ -33,12 +35,14 @@ class UtilizadorRepository:
         return Utilizador(**linha._mapping) if linha else None
 
     def criar(self, username: str, email: str, password_hash: str) -> int:
+        """Cria um utilizador com o role 'utilizador' (nunca administrador)."""
         try:
             return self.sessao.execute(
                 text(
                     """
-                    INSERT INTO utilizadores (username, email, password_hash)
-                    VALUES (:username, :email, :password_hash)
+                    INSERT INTO utilizadores (role_id, username, email, password_hash)
+                    VALUES ((SELECT id FROM roles WHERE nome = 'utilizador'),
+                            :username, :email, :password_hash)
                     RETURNING id
                     """
                 ),
@@ -46,3 +50,15 @@ class UtilizadorRepository:
             ).scalar_one()
         except IntegrityError:
             raise ErroNegocio("Esse username ou email já está registado.") from None
+
+    def registar_login(self, utilizador_id: int, ip: str | None) -> None:
+        self.sessao.execute(
+            text(
+                """
+                UPDATE utilizadores
+                SET ultimo_ip = CAST(:ip AS inet), ultimo_login_em = now()
+                WHERE id = :id
+                """
+            ),
+            {"id": utilizador_id, "ip": ip},
+        )

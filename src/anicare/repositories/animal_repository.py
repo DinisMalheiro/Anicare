@@ -17,7 +17,7 @@ class AnimalRepository:
             text(
                 """
                 SELECT a.id, a.especie_id, a.nome, a.cor, a.porte::text AS porte,
-                       a.sexo::text AS sexo
+                       a.sexo::text AS sexo, a.estado::text AS estado
                 FROM animais a WHERE a.id = :id
                 """
             ),
@@ -30,10 +30,10 @@ class AnimalRepository:
             text(
                 """
                 INSERT INTO animais (especie_id, nome, cor, porte, sexo,
-                                     idade_aproximada, estado_saude)
+                                     idade_aproximada, estado_saude, estado)
                 VALUES (:especie_id, :nome, :cor,
                         CAST(:porte AS porte_animal), CAST(:sexo AS sexo_animal),
-                        :idade, :saude)
+                        :idade, :saude, CAST(:estado AS estado_animal))
                 RETURNING id
                 """
             ),
@@ -45,5 +45,12 @@ class AnimalRepository:
                 "sexo": animal.sexo.value,
                 "idade": animal.idade_aproximada,
                 "saude": animal.estado_saude,
+                "estado": animal.estado.value,
             },
         ).scalar_one()
+
+    def atualizar_estado(self, animal_id: int, estado: str) -> None:
+        self.sessao.execute(
+            text("UPDATE animais SET estado = CAST(:estado AS estado_animal) WHERE id = :id"),
+            {"id": animal_id, "estado": estado},
+        )

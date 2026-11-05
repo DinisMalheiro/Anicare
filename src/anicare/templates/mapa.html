@@ -6,7 +6,22 @@
 {% endblock %}
 
 {% block conteudo %}
-  <p id="contagem" class="contagem"></p>
+  <form id="filtros" class="filtros">
+    <label>Espécie
+      <select name="especie_id">
+        <option value="">Todas</option>
+        {% for e in especies %}<option value="{{ e.id }}">{{ e.nome }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Estado
+      <select name="estado">
+        <option value="">Todos</option>
+        {% for valor, nome in estados %}<option value="{{ valor }}">{{ nome }}</option>{% endfor %}
+      </select>
+    </label>
+    <span id="contagem" class="contagem"></span>
+  </form>
+
   <div id="mapa" class="mapa" role="application" aria-label="Mapa de animais"></div>
 {% endblock %}
 

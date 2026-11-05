@@ -5,6 +5,7 @@ from flask_login import current_user, login_required
 
 from anicare.database import sessao
 from anicare.erros import ErroNegocio
+from anicare.services.comentario_service import ComentarioService
 from anicare.services.publicacao_service import PublicacaoService
 
 bp = Blueprint("publicacoes", __name__, url_prefix="/publicacoes")
@@ -18,6 +19,11 @@ def _converter(valor, tipo, mensagem: str):
         return tipo(valor)
     except (TypeError, ValueError):
         raise ErroNegocio(mensagem) from None
+
+
+def _opcional_int(valor, mensagem: str):
+    valor = (valor or "").strip()
+    return _converter(valor, int, mensagem) if valor else None
 
 
 def _formulario(form, estado: int = 200):
@@ -37,9 +43,10 @@ def _formulario(form, estado: int = 200):
 def detalhe(publicacao_id: int):
     with sessao() as s:
         publicacao = PublicacaoService.com_sessao(s).obter_detalhe(publicacao_id)
+        comentarios = ComentarioService.com_sessao(s).listar(publicacao_id) if publicacao else []
     if publicacao is None:
         abort(404)
-    return render_template("publicacoes/detalhe.html", p=publicacao)
+    return render_template("publicacoes/detalhe.html", p=publicacao, comentarios=comentarios)
 
 
 @bp.route("/nova", methods=["GET", "POST"])
@@ -51,7 +58,8 @@ def nova():
     form = request.form
     try:
         dados = {
-            "especie_id": _converter(form.get("especie_id"), int, "Escolhe a espécie."),
+            "animal_id": _opcional_int(form.get("animal_id"), "Animal inválido."),
+            "especie_id": _opcional_int(form.get("especie_id"), "Espécie inválida."),
             "cor": form.get("cor"),
             "porte": form.get("porte"),
             "sexo": form.get("sexo"),
@@ -68,7 +76,7 @@ def nova():
         }
         with sessao() as s:
             publicacao_id = PublicacaoService.com_sessao(s).criar_avistamento(
-                current_user.id, dados
+                current_user.id, dados, request.files.get("fotografia")
             )
     except ErroNegocio as erro:
         flash(str(erro), "erro")
@@ -76,3 +84,18 @@ def nova():
 
     flash("Avistamento publicado.", "ok")
     return redirect(url_for("publicacoes.detalhe", publicacao_id=publicacao_id))
+
+
+@bp.post("/<int:publicacao_id>/comentarios")
+@login_required
+def comentar(publicacao_id: int):
+    try:
+        with sessao() as s:
+            ComentarioService.com_sessao(s).comentar(
+                publicacao_id, current_user.id, request.form.get("texto"),
+                request.files.get("fotografia"),
+            )
+        flash("Comentário publicado.", "ok")
+    except ErroNegocio as erro:
+        flash(str(erro), "erro")
+    return redirect(url_for("publicacoes.detalhe", publicacao_id=publicacao_id) + "#comentarios")

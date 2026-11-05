@@ -6,7 +6,16 @@
     <h1>{{ p.titulo }}</h1>
     <p class="meta">
       Publicado por <strong>{{ p.autor }}</strong> · visto em {{ p.data_avistamento|data_pt }}
+      · {{ p.pontos }} pontos
     </p>
+
+    {% if p.fotos %}
+      <div class="galeria">
+        {% for f in p.fotos %}
+          <img src="{{ url_for('mapa.media', caminho=f) }}" alt="Fotografia do animal" loading="lazy">
+        {% endfor %}
+      </div>
+    {% endif %}
 
     {% if p.descricao %}<p class="descricao">{{ p.descricao }}</p>{% endif %}
 
@@ -18,7 +27,54 @@
       <dt>Sexo</dt><dd>{{ p.sexo }}</dd>
       {% if p.idade_aproximada %}<dt>Idade</dt><dd>{{ p.idade_aproximada }}</dd>{% endif %}
       {% if p.estado_saude %}<dt>Saúde</dt><dd>{{ p.estado_saude }}</dd>{% endif %}
+      <dt>Estado</dt><dd>{{ p.estado }}</dd>
       <dt>Local</dt><dd>{{ '%.5f'|format(p.latitude) }}, {{ '%.5f'|format(p.longitude) }}</dd>
     </dl>
   </article>
+
+  {% if p.avistamentos|length > 1 %}
+    <section class="cartao">
+      <h2>Avistamentos deste animal</h2>
+      <ol class="avistamentos">
+        {% for a in p.avistamentos %}
+          <li>
+            {% if a.id == p.id %}<strong>{{ a.titulo }}</strong> (este)
+            {% else %}<a href="{{ url_for('publicacoes.detalhe', publicacao_id=a.id) }}">{{ a.titulo }}</a>{% endif %}
+            · {{ a.data_avistamento|data_pt }}
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+  {% endif %}
+
+  <section class="cartao" id="comentarios">
+    <h2>Comentários ({{ comentarios|length }})</h2>
+    {% for c in comentarios %}
+      <div class="comentario">
+        <p class="meta"><strong>{{ c.autor }}</strong> · {{ c.criado_em|data_pt }} · {{ c.pontos }} pontos</p>
+        <p>{{ c.texto }}</p>
+        {% for f in c.fotos %}
+          <img class="foto-comentario" src="{{ url_for('mapa.media', caminho=f) }}" alt="Fotografia do comentário" loading="lazy">
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>Ainda não há comentários.</p>
+    {% endfor %}
+
+    {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('publicacoes.comentar', publicacao_id=p.id) }}"
+            enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Escreve um comentário
+          <textarea name="texto" rows="3" maxlength="2000" required></textarea>
+        </label>
+        <label>Fotografia (opcional)
+          <input type="file" name="fotografia" accept="image/jpeg,image/png,image/webp">
+        </label>
+        <button type="submit">Comentar</button>
+      </form>
+    {% else %}
+      <p><a href="{{ url_for('auth.login', next=request.path) }}">Entra</a> para comentar.</p>
+    {% endif %}
+  </section>
 {% endblock %}

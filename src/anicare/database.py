@@ -39,11 +39,12 @@ def verificar_ligacao() -> None:
     try:
         with engine.connect() as ligacao:
             ligacao.execute(text("SELECT PostGIS_Version()"))
-            ligacao.execute(text("SELECT 1 FROM publicacoes LIMIT 1"))
+            ligacao.execute(text("SELECT 1 FROM ultimos_avistamentos LIMIT 1"))
     except SQLAlchemyError as erro:
         raise RuntimeError(
             "Não foi possível usar a base de dados. Confirma que:\n"
             "  1. o PostgreSQL está a correr e o DATABASE_URL do .env está certo;\n"
             "  2. a extensão PostGIS está instalada;\n"
+            "  3. correste o docs/schema.sql nessa base de dados.\n"
             f"Detalhe: {erro.__cause__ or erro}"
         ) from erro

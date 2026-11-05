@@ -17,6 +17,12 @@ class Sexo(str, Enum):
     DESCONHECIDO = "desconhecido"
 
 
+class EstadoAnimal(str, Enum):
+    AVISTADO = "avistado"
+    RESGATADO = "resgatado"
+    ADOTADO = "adotado"
+
+
 def _enum(classe, valor, nome: str):
     try:
         return classe(valor)
@@ -33,6 +39,7 @@ class Animal:
     nome: str | None = None
     idade_aproximada: str | None = None
     estado_saude: str | None = None
+    estado: EstadoAnimal = EstadoAnimal.AVISTADO
     id: int | None = None
     criado_em: datetime | None = None
 
@@ -46,3 +53,4 @@ class Animal:
             raise ErroDominio("A cor tem demasiados caracteres (máximo 50).")
         self.porte = _enum(Porte, self.porte, "porte")
         self.sexo = _enum(Sexo, self.sexo, "sexo")
+        self.estado = _enum(EstadoAnimal, self.estado, "estado")

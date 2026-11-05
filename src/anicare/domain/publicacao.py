@@ -17,6 +17,7 @@ class Publicacao:
     descricao: str | None = None
     id: int | None = None
     criado_em: datetime | None = None
+    atualizado_em: datetime | None = None
 
     def __post_init__(self):
         self.titulo = (self.titulo or "").strip()

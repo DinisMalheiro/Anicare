@@ -22,6 +22,12 @@ class UtilizadorSessao(UserMixin):
     def __init__(self, utilizador):
         self.id = utilizador.id
         self.username = utilizador.username
+        self.e_admin = utilizador.e_admin
+        self._ativo = utilizador.ativo
+
+    @property
+    def is_active(self):
+        return self._ativo
 
 
 @login_manager.user_loader
@@ -32,7 +38,7 @@ def carregar_utilizador(user_id: str):
         return None
     with sessao() as s:
         utilizador = UtilizadorRepository(s).obter_por_id(utilizador_id)
-    return UtilizadorSessao(utilizador) if utilizador else None
+    return UtilizadorSessao(utilizador) if utilizador and utilizador.ativo else None
 
 
 def _destino_seguro(destino: str | None) -> str:
@@ -66,7 +72,7 @@ def login():
     if request.method == "POST":
         with sessao() as s:
             utilizador = AuthService.com_sessao(s).autenticar(
-                request.form.get("valor"), request.form.get("password")
+                request.form.get("valor"), request.form.get("password"), request.remote_addr
             )
         if utilizador is None:
             flash("Credenciais inválidas.", "erro")

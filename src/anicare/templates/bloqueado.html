@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titulo %}Acesso bloqueado{% endblock %}
+{% block conteudo %}
+  <section class="cartao estreito">
+    <h1>Acesso bloqueado</h1>
+    <p>O teu acesso foi bloqueado.</p>
+    <p><strong>Motivo:</strong> {{ motivo }}</p>
+  </section>
+{% endblock %}

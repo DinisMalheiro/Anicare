@@ -2,6 +2,7 @@ import re
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from anicare.domain.bloqueio import normalizar_ip
 from anicare.domain.utilizador import Utilizador
 from anicare.erros import ErroNegocio
 from anicare.repositories.utilizador_repository import UtilizadorRepository
@@ -21,7 +22,7 @@ class AuthService:
         return cls(UtilizadorRepository(sessao))
 
     def registar(self, username: str, email: str, password: str) -> int:
-        """Regista um utilizador."""
+        """Regista um utilizador comum. Os administradores criam-se por fora da app."""
         username = (username or "").strip()
         email = (email or "").strip()
         if not _RE_USERNAME.fullmatch(username):
@@ -34,11 +35,12 @@ class AuthService:
             raise ErroNegocio("A palavra-passe deve ter entre 8 e 128 caracteres.")
         return self.utilizadores.criar(username, email, generate_password_hash(password))
 
-    def autenticar(self, valor: str, password: str) -> Utilizador | None:
+    def autenticar(self, valor: str, password: str, ip: str | None = None) -> Utilizador | None:
         """Devolve o utilizador se as credenciais estiverem certas, senão None."""
         utilizador = self.utilizadores.obter_por_username_ou_email((valor or "").strip())
         hash_guardado = utilizador.password_hash if utilizador else _HASH_FALSO
         correta = check_password_hash(hash_guardado, password or "")
-        if utilizador is None or not correta:
+        if utilizador is None or not correta or not utilizador.ativo:
             return None
+        self.utilizadores.registar_login(utilizador.id, normalizar_ip(ip))
         return utilizador
