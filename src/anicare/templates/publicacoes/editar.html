@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block titulo %}Editar publicação{% endblock %}
+{% block conteudo %}
+<section class="cartao">
+  <h1>Editar publicação</h1>
+  <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Título<input name="titulo" maxlength="150" required value="{{ p.titulo }}"></label>
+    <label>Descrição<textarea name="descricao" maxlength="5000" rows="5">{{ p.descricao or '' }}</textarea></label>
+    <input type="hidden" name="especie_id" value="{{ p.especie_id }}">
+    <label>Cor<input name="cor" maxlength="50" required value="{{ p.cor }}"></label>
+    <label>Porte<select name="porte" required>
+      {% for valor, nome in [('pequeno', 'Pequeno'), ('medio', 'Médio'), ('grande', 'Grande')] %}
+        <option value="{{ valor }}" {{ 'selected' if p.porte == valor }}>{{ nome }}</option>
+      {% endfor %}
+    </select></label>
+    <label>Sexo<select name="sexo" required>
+      {% for valor, nome in [('desconhecido', 'Não sei'), ('macho', 'Macho'), ('femea', 'Fêmea')] %}
+        <option value="{{ valor }}" {{ 'selected' if p.sexo == valor }}>{{ nome }}</option>
+      {% endfor %}
+    </select></label>
+    <label>Nome<input name="nome" maxlength="80" value="{{ p.animal_nome or '' }}"></label>
+    <label>Idade aproximada<input name="idade_aproximada" maxlength="50" value="{{ p.idade_aproximada or '' }}"></label>
+    <label>Estado de saúde<textarea name="estado_saude" rows="3">{{ p.estado_saude or '' }}</textarea></label>
+    <label>Substituir fotografia (opcional)
+      <input type="file" name="fotografia" accept="image/jpeg,image/png,image/webp">
+    </label>
+    <label>Data do avistamento<input name="data_avistamento" type="datetime-local" required value="{{ p.data_avistamento.strftime('%Y-%m-%dT%H:%M') }}"></label>
+    <button type="submit">Guardar</button>
+  </form>
+</section>
+{% endblock %}

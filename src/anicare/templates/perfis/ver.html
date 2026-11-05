@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titulo %}Perfil de {{ perfil.nome_exibicao or perfil.username }}{% endblock %}
+{% block conteudo %}
+<section class="cartao">
+  <img class="avatar avatar-grande" src="{{ url_for('perfis.avatar', username=perfil.username) }}" alt="Fotografia de perfil">
+  <h1>{{ perfil.nome_exibicao or perfil.username }}</h1>
+  {% if perfil.bio %}<p class="descricao">{{ perfil.bio }}</p>{% else %}<p>Este utilizador ainda não tem biografia.</p>{% endif %}
+  {% if current_user.is_authenticated and current_user.id == perfil.id %}
+    <a href="{{ url_for('perfis.editar') }}">Editar perfil</a>
+  {% elif current_user.is_authenticated %}
+    <a href="{{ url_for('mensagens.conversa', outro_id=perfil.id) }}">Enviar mensagem</a>
+  {% endif %}
+</section>
+{% endblock %}

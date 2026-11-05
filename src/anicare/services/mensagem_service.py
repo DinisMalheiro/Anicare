@@ -8,6 +8,7 @@ Regras a implementar:
 """
 
 from anicare.domain.mensagem import Mensagem
+from anicare.erros import ErroNegocio
 
 
 class MensagemService:
@@ -15,5 +16,12 @@ class MensagemService:
         self.mensagens = mensagens
 
     def enviar(self, remetente_id: int, destinatario_id: int, texto: str) -> int:
-        Mensagem(remetente_id=remetente_id, destinatario_id=destinatario_id, texto=texto)
-        raise NotImplementedError("Por implementar.")
+        if not self.mensagens.utilizador_ativo(destinatario_id):
+            raise ErroNegocio("O destinatário não existe ou está inativo.")
+        try:
+            mensagem = Mensagem(
+                remetente_id=remetente_id, destinatario_id=destinatario_id, texto=texto
+            )
+        except ValueError as erro:
+            raise ErroNegocio(str(erro)) from None
+        return self.mensagens.enviar(mensagem)

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titulo %}Administração{% endblock %}
+{% block conteudo %}
+<section class="cartao"><h1>Moderação</h1>
+<p>Os moderadores podem remover publicações e comentários diretamente nas respetivas páginas.</p>
+<form method="post" action="{{ url_for('admin.bloquear') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>ID do utilizador (opcional)<input name="utilizador_id" type="number"></label>
+<label>IP ou rede (opcional)<input name="ip"></label>
+<label>Motivo<input name="motivo" required maxlength="500"></label>
+<label>Expira em (opcional)<input name="expira_em" type="datetime-local"></label>
+<button type="submit">Criar bloqueio</button>
+</form></section>
+{% endblock %}

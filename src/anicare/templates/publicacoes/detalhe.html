@@ -2,12 +2,53 @@
 {% block titulo %}{{ p.titulo }}{% endblock %}
 
 {% block conteudo %}
-  <article class="cartao">
-    <h1>{{ p.titulo }}</h1>
-    <p class="meta">
-      Publicado por <strong>{{ p.autor }}</strong> · visto em {{ p.data_avistamento|data_pt }}
-      · {{ p.pontos }} pontos
-    </p>
+  <article class="cartao post">
+    <header class="post-cabecalho">
+      <img class="avatar avatar-pequeno"
+           src="{{ url_for('perfis.avatar', username=p.autor_username) }}"
+           alt="Avatar de {{ p.autor }}">
+      <div>
+        <h1>{{ p.titulo }}</h1>
+        <p class="meta">
+          Publicado por <a href="{{ url_for('perfis.ver', username=p.autor_username) }}"><strong>{{ p.autor }}</strong></a>
+          · visto em {{ p.data_avistamento|data_pt }}
+          · {{ p.pontos }} pontos
+        </p>
+        {% if p.atualizado_em %}
+          <p class="meta">Editado em {{ p.atualizado_em|data_pt }}</p>
+        {% endif %}
+      </div>
+    </header>
+    {% if current_user.is_authenticated and current_user.id == p.utilizador_id %}
+      <a href="{{ url_for('publicacoes.editar', publicacao_id=p.id) }}">Editar publicação</a>
+    {% endif %}
+    <a class="botao-secundario" href="{{ url_for('mapa.inicio', pin=p.id, animal=p.animal_id) }}">Ver no mapa</a>
+    {% if current_user.is_authenticated and current_user.e_admin %}
+      <form method="post" action="{{ url_for('publicacoes.apagar', publicacao_id=p.id) }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Remover publicação</button>
+      </form>
+    {% endif %}
+    {% if current_user.is_authenticated and current_user.id != p.utilizador_id %}
+      <form method="post" action="{{ url_for('publicacoes.votar', publicacao_id=p.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button name="valor" value="1" type="submit">Upvote</button>
+        <button name="valor" value="-1" type="submit">Downvote</button>
+      </form>
+    {% endif %}
+    {% if current_user.is_authenticated and (current_user.id == p.utilizador_id or current_user.e_admin) %}
+      <form method="post" action="{{ url_for('publicacoes.estado', publicacao_id=p.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Estado do animal
+          <select name="estado">
+            {% for valor, nome in [('avistado', 'Avistado'), ('resgatado', 'Resgatado'), ('adotado', 'Adotado')] %}
+              <option value="{{ valor }}" {{ 'selected' if p.estado == valor }}>{{ nome }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button type="submit">Atualizar estado</button>
+      </form>
+    {% endif %}
 
     {% if p.fotos %}
       <div class="galeria">
@@ -15,10 +56,13 @@
           <img src="{{ url_for('mapa.media', caminho=f) }}" alt="Fotografia do animal" loading="lazy">
         {% endfor %}
       </div>
+    {% else %}
+      <div class="imagem-vazia">Sem imagem do animal</div>
     {% endif %}
 
     {% if p.descricao %}<p class="descricao">{{ p.descricao }}</p>{% endif %}
 
+    <h2>Informação do animal</h2>
     <dl class="ficha">
       <dt>Espécie</dt><dd>{{ p.especie }}</dd>
       {% if p.animal_nome %}<dt>Nome</dt><dd>{{ p.animal_nome }}</dd>{% endif %}
@@ -28,7 +72,6 @@
       {% if p.idade_aproximada %}<dt>Idade</dt><dd>{{ p.idade_aproximada }}</dd>{% endif %}
       {% if p.estado_saude %}<dt>Saúde</dt><dd>{{ p.estado_saude }}</dd>{% endif %}
       <dt>Estado</dt><dd>{{ p.estado }}</dd>
-      <dt>Local</dt><dd>{{ '%.5f'|format(p.latitude) }}, {{ '%.5f'|format(p.longitude) }}</dd>
     </dl>
   </article>
 
@@ -48,16 +91,57 @@
   {% endif %}
 
   <section class="cartao" id="comentarios">
-    <h2>Comentários ({{ comentarios|length }})</h2>
-    {% for c in comentarios %}
-      <div class="comentario">
-        <p class="meta"><strong>{{ c.autor }}</strong> · {{ c.criado_em|data_pt }} · {{ c.pontos }} pontos</p>
+    <h2>Comentários</h2>
+    {% macro mostrar_comentario(c, nivel=0) %}
+      <details class="comentario-thread" style="--nivel: {{ nivel }}" open>
+        <summary class="comentario-summary">
+          <span class="comentario-autor">
+            <a href="{{ url_for('perfis.ver', username=c.autor_username) }}"><strong>{{ c.autor }}</strong></a>
+            · {{ c.pontos }} pontos
+          </span>
+          <span class="meta">{{ c.criado_em|data_pt }}</span>
+        </summary>
+        <div class="comentario">
+        {% if current_user.is_authenticated and current_user.id != c.utilizador_id %}
+          <p class="meta"><a href="{{ url_for('mensagens.conversa', outro_id=c.utilizador_id) }}">Mensagem para {{ c.autor }}</a></p>
+        {% endif %}
         <p>{{ c.texto }}</p>
-        {% for f in c.fotos %}
-          <img class="foto-comentario" src="{{ url_for('mapa.media', caminho=f) }}" alt="Fotografia do comentário" loading="lazy">
+        {% if c.fotos %}
+          {% for f in c.fotos %}
+            <img class="foto-comentario" src="{{ url_for('mapa.media', caminho=f) }}" alt="Fotografia do comentário" loading="lazy">
+          {% endfor %}
+        {% else %}
+          <div class="imagem-vazia imagem-vazia-comentario">Sem imagem</div>
+        {% endif %}
+        {% if current_user.is_authenticated %}
+          <div class="comentario-acoes">
+            {% if current_user.id != c.utilizador_id %}
+              <form method="post" action="{{ url_for('publicacoes.votar_comentario', comentario_id=c.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button name="valor" value="1" type="submit">▲</button>
+                <button name="valor" value="-1" type="submit">▼</button>
+              </form>
+            {% endif %}
+            <form method="post" action="{{ url_for('publicacoes.responder', publicacao_id=p.id, comentario_id=c.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input name="texto" maxlength="2000" placeholder="Responder a {{ c.autor }}" required>
+              <button type="submit">Responder</button>
+            </form>
+          </div>
+        {% endif %}
+        {% if current_user.is_authenticated and current_user.e_admin %}
+          <form method="post" action="{{ url_for('publicacoes.apagar_comentario', comentario_id=c.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Remover comentário</button>
+          </form>
+        {% endif %}
+        {% for resposta in c.respostas %}
+          {{ mostrar_comentario(resposta, nivel + 1) }}
         {% endfor %}
-      </div>
-    {% else %}
+        </div>
+      </details>
+    {% endmacro %}
+    {% for c in comentarios %}{{ mostrar_comentario(c) }}{% else %}
       <p>Ainda não há comentários.</p>
     {% endfor %}
 

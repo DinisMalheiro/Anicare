@@ -34,7 +34,8 @@ class PublicacaoService:
     def listar_especies(self) -> list[dict]:
         return self.animais.listar_especies()
 
-    def pins_geojson(self, especie_id: int | None = None, estado: str | None = None) -> dict:
+    def pins_geojson(self, especie_id: int | None = None, estado: str | None = None,
+                     pesquisa: str | None = None, pagina: int = 1) -> dict:
         """Os pins do mapa em GeoJSON: um por animal, no último avistamento."""
         if estado:
             try:
@@ -42,7 +43,7 @@ class PublicacaoService:
             except ValueError:
                 raise ErroNegocio("Estado inválido.") from None
         features = []
-        for p in self.publicacoes.listar_pins(especie_id, estado):
+        for p in self.publicacoes.listar_pins(especie_id, estado, pesquisa, pagina=pagina):
             features.append(
                 {
                     "type": "Feature",
@@ -51,6 +52,9 @@ class PublicacaoService:
                         "id": p["id"],
                         "animal_id": p["animal_id"],
                         "titulo": p["titulo"],
+                        "autor": p["autor"],
+                        "autor_username": p["autor_username"],
+                        "autor_avatar": p["autor_avatar"],
                         "nome": p["animal_nome"],
                         "especie": p["especie"],
                         "cor": p["cor"],
@@ -144,3 +148,58 @@ class PublicacaoService:
                 self.imagens.apagar(caminho)  # não deixar ficheiros órfãos
             raise
         return publicacao_id
+
+    def atualizar(self, publicacao_id: int, utilizador_id: int, dados: dict, ficheiro=None) -> None:
+        try:
+            animal = Animal(
+                especie_id=dados.get("especie_id"),
+                cor=dados.get("cor"),
+                porte=dados.get("porte"),
+                sexo=dados.get("sexo") or "desconhecido",
+                nome=_texto(dados.get("nome")),
+                idade_aproximada=_texto(dados.get("idade_aproximada")),
+                estado_saude=_texto(dados.get("estado_saude")),
+            )
+            publicacao = Publicacao(
+                utilizador_id=utilizador_id, animal_id=dados.get("animal_id"),
+                titulo=dados.get("titulo"), descricao=dados.get("descricao"),
+                latitude=dados.get("latitude"), longitude=dados.get("longitude"),
+                data_avistamento=dados.get("data_avistamento"),
+            )
+        except (ErroDominio, TypeError) as erro:
+            raise ErroNegocio(str(erro) if isinstance(erro, ErroDominio) else "Dados inválidos.") from None
+        caminho = None
+        antigo = None
+        if ficheiro is not None and getattr(ficheiro, "filename", ""):
+            caminho = self.imagens.guardar(ficheiro)
+        try:
+            if not self.publicacoes.atualizar(
+                publicacao_id, utilizador_id,
+                {"titulo": publicacao.titulo, "descricao": publicacao.descricao,
+                 "lat": publicacao.latitude, "lon": publicacao.longitude,
+                 "data": publicacao.data_avistamento},
+            ):
+                raise ErroNegocio("Não tens permissão para editar esta publicação.")
+            if not self.animais.atualizar(dados["animal_id"], {
+                "especie_id": animal.especie_id, "nome": animal.nome, "cor": animal.cor,
+                "porte": animal.porte.value, "sexo": animal.sexo.value,
+                "idade_aproximada": animal.idade_aproximada, "estado_saude": animal.estado_saude,
+            }):
+                raise ErroNegocio("O animal associado já não existe.")
+            if caminho:
+                antigo = self.fotografias.substituir_principal(publicacao_id, caminho)
+        except Exception:
+            if caminho:
+                self.imagens.apagar(caminho)
+            raise
+        if antigo:
+            self.imagens.apagar(antigo)
+
+    def atualizar_estado(self, animal_id: int, estado: str) -> None:
+        try:
+            estado_animal = EstadoAnimal(estado)
+        except ValueError:
+            raise ErroNegocio("Estado inválido.") from None
+        if self.animais.obter_por_id(animal_id) is None:
+            raise ErroNegocio("O animal não existe.")
+        self.animais.atualizar_estado(animal_id, estado_animal.value)

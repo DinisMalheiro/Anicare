@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titulo %}Editar perfil{% endblock %}
+{% block conteudo %}
+<section class="cartao estreito">
+  <h1>Editar perfil</h1>
+  <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Nome público<input name="nome_exibicao" maxlength="60" required value="{{ perfil.nome_exibicao or perfil.username }}"></label>
+    <label>Biografia<textarea name="bio" maxlength="500" rows="5">{{ perfil.bio or '' }}</textarea></label>
+    <label>Fotografia de perfil<input type="file" name="avatar" accept="image/jpeg,image/png,image/webp"></label>
+    <button type="submit">Guardar</button>
+  </form>
+</section>
+{% endblock %}

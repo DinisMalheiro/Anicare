@@ -13,8 +13,10 @@
     <nav>
       <a href="{{ url_for('mapa.inicio') }}">Mapa</a>
       {% if current_user.is_authenticated %}
-        <a href="{{ url_for('publicacoes.nova') }}">Nova publicação</a>
-        <span class="utilizador">{{ current_user.username }}</span>
+        <a href="{{ url_for('publicacoes.nova') }}">Adicionar Pin</a>
+        <a href="{{ url_for('mensagens.caixa') }}">Mensagens</a>
+        <a href="{{ url_for('perfis.ver', username=current_user.username) }}">{{ current_user.nome_exibicao }}</a>
+        {% if current_user.e_admin %}<a href="{{ url_for('admin.inicio') }}">Moderação</a>{% endif %}
         <form method="post" action="{{ url_for('auth.logout') }}" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="ligacao">Sair</button>
@@ -26,15 +28,28 @@
     </nav>
   </header>
 
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% if mensagens %}
+      <div class="notificacoes" aria-live="polite">
+        {% for categoria, texto in mensagens %}
+          <p class="aviso aviso-{{ categoria }}" role="status">{{ texto }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
   <main>
-    {% with mensagens = get_flashed_messages(with_categories=true) %}
-      {% for categoria, texto in mensagens %}
-        <p class="aviso aviso-{{ categoria }}" role="status">{{ texto }}</p>
-      {% endfor %}
-    {% endwith %}
     {% block conteudo %}{% endblock %}
   </main>
 
   {% block scripts %}{% endblock %}
+  <script>
+    window.setTimeout(function () {
+      document.querySelectorAll(".notificacoes .aviso").forEach(function (item) {
+        item.classList.add("notificacao-a-sair");
+        window.setTimeout(function () { item.remove(); }, 300);
+      });
+    }, 4500);
+  </script>
 </body>
 </html>

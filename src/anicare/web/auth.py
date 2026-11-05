@@ -22,6 +22,7 @@ class UtilizadorSessao(UserMixin):
     def __init__(self, utilizador):
         self.id = utilizador.id
         self.username = utilizador.username
+        self.nome_exibicao = utilizador.nome_exibicao or utilizador.username
         self.e_admin = utilizador.e_admin
         self._ativo = utilizador.ativo
 

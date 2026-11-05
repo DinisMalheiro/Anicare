@@ -9,6 +9,7 @@ class Comentario:
     publicacao_id: int
     utilizador_id: int
     texto: str
+    parent_id: int | None = None
     id: int | None = None
     criado_em: datetime | None = None
 

@@ -21,7 +21,8 @@ class PublicacaoRepository:
         self.sessao = sessao
 
     def listar_pins(
-        self, especie_id: int | None = None, estado: str | None = None
+        self, especie_id: int | None = None, estado: str | None = None,
+        pesquisa: str | None = None, limite: int = 100, pagina: int = 1
     ) -> list[dict]:
         """Um pin por animal: usa SEMPRE a vista ultimos_avistamentos (sem repetições)."""
         filtros, params = [], {}
@@ -31,19 +32,30 @@ class PublicacaoRepository:
         if estado:
             filtros.append("a.estado = CAST(:estado AS estado_animal)")
             params["estado"] = estado
+        if pesquisa:
+            filtros.append("(p.titulo ILIKE :pesquisa OR p.descricao ILIKE :pesquisa OR a.cor ILIKE :pesquisa)")
+            params["pesquisa"] = f"%{pesquisa.strip()}%"
         onde = ("WHERE " + " AND ".join(filtros)) if filtros else ""
+        params["limite"] = max(1, min(limite, 100))
+        params["offset"] = max(0, pagina - 1) * params["limite"]
         linhas = self.sessao.execute(
             text(
                 f"""
                 SELECT p.id, p.animal_id, p.titulo, p.data_avistamento, {_LOCAL},
+                       COALESCE(perfil.nome_exibicao, u.username::text) AS autor,
+                       u.username::text AS autor_username,
+                       perfil.avatar_caminho AS autor_avatar,
                        e.nome AS especie, a.nome AS animal_nome, a.cor,
                        a.porte::text AS porte, a.estado::text AS estado,
                        {_PRIMEIRA_FOTO}, {_PONTOS}
                 FROM ultimos_avistamentos p
                 JOIN animais a ON a.id = p.animal_id
                 JOIN especies e ON e.id = a.especie_id
+                JOIN utilizadores u ON u.id = p.utilizador_id
+                LEFT JOIN perfis perfil ON perfil.utilizador_id = u.id
                 {onde}
                 ORDER BY p.data_avistamento DESC
+                LIMIT :limite OFFSET :offset
                 """
             ),
             params,
@@ -62,14 +74,19 @@ class PublicacaoRepository:
         linha = self.sessao.execute(
             text(
                 f"""
-                SELECT p.id, p.utilizador_id, u.username::text AS autor, p.animal_id,
-                       p.titulo, p.descricao, p.data_avistamento, p.criado_em, {_LOCAL},
-                       e.nome AS especie, a.nome AS animal_nome, a.cor,
+                SELECT p.id, p.utilizador_id,
+                       COALESCE(perfil.nome_exibicao, u.username::text) AS autor,
+                       u.username::text AS autor_username,
+                       perfil.avatar_caminho AS autor_avatar, p.animal_id,
+                       p.titulo, p.descricao, p.data_avistamento, p.criado_em,
+                       p.atualizado_em, {_LOCAL},
+                       a.especie_id, e.nome AS especie, a.nome AS animal_nome, a.cor,
                        a.porte::text AS porte, a.sexo::text AS sexo,
                        a.idade_aproximada, a.estado_saude, a.estado::text AS estado,
                        {_PONTOS}
                 FROM publicacoes p
                 JOIN utilizadores u ON u.id = p.utilizador_id
+                LEFT JOIN perfis perfil ON perfil.utilizador_id = u.id
                 JOIN animais a ON a.id = p.animal_id
                 JOIN especies e ON e.id = a.especie_id
                 WHERE p.id = :id
@@ -155,3 +172,30 @@ class PublicacaoRepository:
                 "data": publicacao.data_avistamento,
             },
         ).scalar_one()
+
+    def atualizar(self, publicacao_id: int, utilizador_id: int, dados: dict) -> bool:
+        resultado = self.sessao.execute(
+            text(
+                """
+                UPDATE publicacoes
+                SET titulo = :titulo, descricao = :descricao, localizacao =
+                    CAST(ST_SetSRID(ST_MakePoint(:lon, :lat), 4326) AS geography),
+                    data_avistamento = :data, atualizado_em = now()
+                WHERE id = :id AND utilizador_id = :uid
+                """
+            ),
+            {"id": publicacao_id, "uid": utilizador_id, **dados},
+        )
+        return resultado.rowcount == 1
+
+    def apagar(self, publicacao_id: int) -> bool:
+        resultado = self.sessao.execute(
+            text("DELETE FROM publicacoes WHERE id = :id"), {"id": publicacao_id}
+        )
+        return resultado.rowcount == 1
+
+    def autoriza(self, publicacao_id: int, utilizador_id: int) -> bool:
+        return self.sessao.execute(
+            text("SELECT 1 FROM publicacoes WHERE id = :id AND utilizador_id = :uid"),
+            {"id": publicacao_id, "uid": utilizador_id},
+        ).first() is not None

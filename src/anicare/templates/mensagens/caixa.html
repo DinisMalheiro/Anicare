@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block titulo %}Mensagens{% endblock %}
+{% block conteudo %}
+<section class="cartao"><h1>Mensagens</h1>
+{% for c in conversas %}<p><a href="{{ url_for('mensagens.conversa', outro_id=c.id) }}">{{ c.nome_exibicao }}</a> ({{ c.por_ler }} por ler)</p>
+{% else %}<p>Ainda não tens conversas.</p>{% endfor %}
+</section>
+{% endblock %}

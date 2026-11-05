@@ -1,5 +1,6 @@
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from anicare.domain.bloqueio import Bloqueio
 
 
 class BloqueioRepository:
@@ -33,3 +34,16 @@ class BloqueioRepository:
             ),
             params,
         ).scalar()
+
+    def criar(self, bloqueio: Bloqueio) -> int:
+        return self.sessao.execute(
+            text(
+                """
+                INSERT INTO bloqueios (utilizador_id, ip, ban_motivo, criado_por, expira_em)
+                VALUES (:uid, CAST(:ip AS inet), :motivo, :criado_por, :expira)
+                RETURNING id
+                """
+            ),
+            {"uid": bloqueio.utilizador_id, "ip": bloqueio.ip, "motivo": bloqueio.ban_motivo,
+             "criado_por": bloqueio.criado_por, "expira": bloqueio.expira_em},
+        ).scalar_one()

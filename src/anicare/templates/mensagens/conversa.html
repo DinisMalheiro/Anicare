@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block titulo %}Conversa{% endblock %}
+{% block conteudo %}
+<section class="cartao"><h1>Conversa com <a href="{{ url_for('perfis.ver', username=outro_username) }}">{{ outro_nome }}</a></h1>
+{% for m in mensagens %}<p><strong><a href="{{ url_for('perfis.ver', username=m.remetente_username) }}">{{ m.remetente }}</a></strong> · {{ m.criado_em|data_pt }}<br>{{ m.texto }}</p>{% else %}<p>Sem mensagens.</p>{% endfor %}
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><textarea name="texto" maxlength="5000" required></textarea><button type="submit">Enviar</button></form>
+</section>
+{% endblock %}

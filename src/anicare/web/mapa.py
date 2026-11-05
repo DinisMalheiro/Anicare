@@ -23,7 +23,9 @@ def pins():
     try:
         with sessao() as s:
             dados = PublicacaoService.com_sessao(s).pins_geojson(
-                request.args.get("especie_id", type=int), request.args.get("estado") or None
+                request.args.get("especie_id", type=int), request.args.get("estado") or None,
+                request.args.get("q") or None,
+                max(1, request.args.get("pagina", default=1, type=int)),
             )
     except ErroNegocio as erro:
         return jsonify(erro=str(erro)), 400

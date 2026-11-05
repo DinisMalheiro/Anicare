@@ -34,6 +34,35 @@ class FotografiaRepository:
         )
         return [linha.caminho for linha in linhas]
 
+    def substituir_principal(self, publicacao_id: int, caminho: str) -> str | None:
+        antigo = self.sessao.execute(
+            text(
+                """
+                SELECT caminho FROM fotografias
+                WHERE publicacao_id = :id
+                ORDER BY ordem, id LIMIT 1
+                """
+            ),
+            {"id": publicacao_id},
+        ).scalar()
+        if antigo:
+            self.sessao.execute(
+                text(
+                    """
+                    UPDATE fotografias SET caminho = :caminho
+                    WHERE id = (
+                        SELECT id FROM fotografias
+                        WHERE publicacao_id = :id
+                        ORDER BY ordem, id LIMIT 1
+                    )
+                    """
+                ),
+                {"id": publicacao_id, "caminho": caminho},
+            )
+        else:
+            self.criar(Fotografia(caminho=caminho, publicacao_id=publicacao_id))
+        return antigo
+
     def listar_por_comentarios(self, comentario_ids: list[int]) -> dict[int, list[str]]:
         if not comentario_ids:
             return {}

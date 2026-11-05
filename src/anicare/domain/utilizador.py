@@ -9,6 +9,7 @@ class Utilizador:
     email: str
     password_hash: str
     role: str  # nome do role: "utilizador" ou "administrador"
+    nome_exibicao: str | None = None
     ativo: bool = True
     ultimo_ip: str | None = None
     ultimo_login_em: datetime | None = None

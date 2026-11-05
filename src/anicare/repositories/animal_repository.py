@@ -54,3 +54,26 @@ class AnimalRepository:
             text("UPDATE animais SET estado = CAST(:estado AS estado_animal) WHERE id = :id"),
             {"id": animal_id, "estado": estado},
         )
+
+    def estado(self, animal_id: int) -> str | None:
+        return self.sessao.execute(
+            text("SELECT estado::text FROM animais WHERE id = :id"), {"id": animal_id}
+        ).scalar()
+
+    def atualizar(self, animal_id: int, dados: dict) -> bool:
+        resultado = self.sessao.execute(
+            text(
+                """
+                UPDATE animais
+                SET especie_id = :especie_id, nome = :nome, cor = :cor,
+                    porte = CAST(:porte AS porte_animal),
+                    sexo = CAST(:sexo AS sexo_animal),
+                    idade_aproximada = :idade, estado_saude = :saude
+                WHERE id = :id
+                """
+            ),
+            {"id": animal_id, "especie_id": dados["especie_id"], "nome": dados["nome"],
+             "cor": dados["cor"], "porte": dados["porte"], "sexo": dados["sexo"],
+             "idade": dados["idade_aproximada"], "saude": dados["estado_saude"]},
+        )
+        return resultado.rowcount == 1
